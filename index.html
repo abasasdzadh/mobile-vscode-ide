@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<!-- تفهیم به مرورگر جهت فشرده‌سازی خودکار ارتفاع مفید زمان باز شدن کیبورد -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+<title>Mobile VS Code IDE</title>
+
+<!-- وارد کردن فونت‌های استاندارد فارسی و انگلیسی کدهای برنامه‌نویسی -->
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<!-- وارد کردن کتابخانه قدرتمند آیکون Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* ===== متغیرهای تم روز و شب ===== */
+:root {
+  --bg-main: #1e1e1e;
+  --bg-sidebar: #111;
+  --border-color: #333;
+  --text-main: #d4d4d4;
+  --text-muted: #969696;
+  --bg-active: #2d2d2d;
+  --accent-color: #007acc;
+  --bg-button: #0e639c;
+  --bg-button-hover: #1177bb;
+  --bg-newfile: #252526;
+}
+
+.light-theme {
+  --bg-main: #ffffff;
+  --bg-sidebar: #f5f5f7;
+  --border-color: #d1d1d6;
+  --text-main: #1c1c1e;
+  --text-muted: #8e8e93;
+  --bg-active: #e5e5ea;
+  --accent-color: #007acc;
+  --bg-button: #007acc;
+  --bg-button-hover: #005a9e;
+  --bg-newfile: #e5e5ea;
+}
+
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Vazirmatn', sans-serif;
+  overflow: hidden;
+}
+
+/* ===== APP MAIN LAYOUT ===== */
+#app {
+  display: flex;
+  flex-direction: column; /* چینش ستونی اصلی: هدر در بالا، کارگاه اصلی در پایین */
+  height: 100vh;
+  height: 100dvh; /* انطباق داینامیک قد برنامه با فریم فعال موبایل */
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ===== TOP HEADER ===== */
+#top-header {
+  height: 50px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+  padding: 4px;
+}
+
+#current-filename {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--text-main);
+  direction: ltr;
+}
+
+#header-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+button {
+  background: var(--bg-button);
+  color: white;
+  border: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: 'Vazirmatn', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: var(--bg-button-hover);
+}
+
+/* تمایز دکمه اجرا با رنگ سبز جذاب و متمایز */
+.run-btn {
+  background: #107c41 !important;
+}
+.run-btn:hover {
+  background: #0b5a2e !important;
+}
+
+/* ===== MAIN WORKSPACE (کانتینر حلال باگ دسکتاپ) ===== */
+#main-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: row; /* چینش افقی پیش‌فرض دسکتاپ */
+  min-height: 0;
+  width: 100%;
+  position: relative;
+}
+
+/* ===== SIDEBAR (لیست فایل‌ها) ===== */
+#sidebar {
+  width: 220px;
+  background: var(--bg-sidebar);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+  flex-shrink: 0;
+  z-index: 10;
+  font-family: 'Vazirmatn', sans-serif;
+}
+
+#newFile {
+  padding: 12px;
+  background: var(--bg-newfile);
+  color: var(--text-main);
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-color);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#newFile:hover {
+  filter: brightness(1.1);
+}
+
+#files {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  user-select: none;
+  direction: ltr;
+}
+
+.file-item:hover, .file-item.active {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.file-item.active {
+  border-left: 3px solid var(--accent-color);
+  padding-left: 12px;
+}
+
+.file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.file-actions {
+  display: flex;
+  gap: 10px;
+  opacity: 0.2;
+  transition: opacity 0.2s;
+}
+
+.file-item:hover .file-actions, .file-item.active .file-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: var(--text-muted);
+}
+
+.action-btn:hover {
+  color: var(--text-main);
+}
+
+/* بخش مدیریت فایل در انتهای سایدبار کشویی */
+#sidebar-file-actions {
+  padding: 10px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-newfile);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#sidebar-file-actions button {
+  flex: 1;
+  justify-content: center;
+  padding: 8px;
+  font-size: 11px;
+}
+
+/* لایه تاریک پشت سایدبار کشویی در موبایل */
+#sidebar-overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+}
+
+/* ===== EDITOR CONTAINER ===== */
+#editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+#editor {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* ===== KEYBOARD HELPERS ===== */
+#helpers-bar {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 42px;
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border-color);
+  padding: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+  user-select: none;
+  z-index: 100;
+}
+
+#helpers-bar span {
+  display: inline-block;
+  padding: 6px 12px;
+  background: var(--bg-newfile);
+  color: var(--text-main);
+  border-radius: 4px;
+  margin-right: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#helpers-bar .helper-action-btn {
+  background: var(--bg-button);
+  color: white;
+}
+#helpers-bar .helper-action-btn:active {
+  background: var(--bg-button-hover);
+}
+
+/* ===== PANEL (CONSOLE / PREVIEW) ===== */
+#panel {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-color);
+  flex-shrink: 0;
+  position: relative;
+}
+
+#panel-header {
+  padding: 10px 12px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: bold;
+}
+
+/* استایل دکمه‌های عملیاتی کنسول خروجی */
+#panel-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+#panel-actions button {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+#panel-actions button:hover {
+  color: var(--text-main);
+}
+
+#console {
+  flex: 1;
+  background: var(--bg-main);
+  padding: 10px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+#panel.terminal-hidden {
+  display: none !important;
+}
+
+/* ===== MODAL SETTINGS ===== */
+.modal {
+  display: none; 
+  position: fixed; 
+  z-index: 2000; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  background-color: rgba(0,0,0,0.6); 
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+  padding: 15px;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  direction: rtl;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.close-modal {
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.close-modal:hover {
+  color: var(--text-main);
+}
+
+.setting-item {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-item label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: bold;
+}
+
+button i {
+  font-size: 12px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-group button {
+  flex: 1;
+  justify-content: center;
+}
+
+.pip-input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.pip-input-group input {
+  flex: 1;
+  background: var(--bg-newfile);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+.pulsing-status {
+  animation: pulse 1.5s infinite ease-in-out;
+  color: var(--accent-color) !important;
+}
+
+/* ===== پاپ‌آپ پیش‌نمایش تمام‌صفحه ===== */
+#fullscreen-preview-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 3000;
+  background: white;
+  flex-direction: column;
+}
+
+#fullscreen-header {
+  height: 48px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-family: 'Vazirmatn', sans-serif;
+  color: var(--text-main);
+  flex-shrink: 0;
+  direction: rtl;
+}
+
+#fullscreen-header button {
+  background: var(--bg-button);
+  color: white;
+}
+#fullscreen-header button:hover {
+  background: var(--bg-button-hover);
+}
+
+#fullscreen-iframe {
+  border: none;
+  width: 100%;
+  flex: 1;
+  background: white;
+}
+
+/* =========================================
+   ===== MOBILE STYLES (<= 768px) =====
+   ========================================= */
+@media (max-width: 768px) {
+  #main-workspace {
+    flex-direction: column; /* چینش عمودی کارگاه اصلی در موبایل */
+  }
+
+  #menu-btn {
+    display: block; /* نمایش همبرگری منو در موبایل */
+  }
+
+  #sidebar {
+    position: absolute;
+    left: 0;
+    top: 0; /* چسبیدن به بالای کارگاه بدون نیاز به فواصل سخت افزاری */
+    height: 100%;
+    width: 240px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    border-right: 1px solid var(--border-color);
+  }
+
+  .sidebar-open #sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-open #sidebar-overlay {
+    display: block;
+  }
+
+  /* لایه تاریک بک‌دراپ در بالای کارگاه قرار می‌گیرد */
+  #sidebar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  #editor {
+    height: calc(100% - 42px);
+  }
+
+  #panel {
+    width: 100% !important;
+    height: 35vh;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  #helpers-bar {
+    display: flex;
+  }
+
+  /* متمایز و متناسب‌سازی دکمه‌های هدر کنسول خروجی در حالت موبایل */
+  .panel-btn-text {
+    display: none !important;
+  }
+
+  #panel-actions {
+    gap: 6px;
+  }
+
+  #panel-actions button {
+    background: var(--bg-newfile);
+    color: var(--text-main);
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    justify-content: center;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+  }
+
+  #panel-actions button:hover {
+    background: var(--bg-active);
+  }
+}
+
+/* قوانین اختصاصی کلاس مخفی‌سازی نوار علائم */
+.helpers-hidden #helpers-bar {
+  display: none !important;
+}
+.helpers-hidden #editor {
+  height: 100% !important;
+}
+
+@media (max-width: 480px) {
+  .btn-text {
+    display: none;
+  }
+  #header-actions button {
+    padding: 6px 10px;
+  }
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="app">
+
+  <!-- TOP HEADER (همیشه در بالاترین بخش برنامه دسکتاپ و موبایل قرار دارد) -->
+  <div id="top-header">
+    <button id="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+    <div id="current-filename">main.js</div>
+    
+    <div id="header-actions">
+      <!-- متمایز شدن دکمه اجرا با کلاس run-btn و رنگ سبز -->
+      <button class="run-btn" onclick="run()"><i class="fa-solid fa-play"></i> <span class="btn-text">اجرا</span></button>
+      <button onclick="toggleTerminal()"><i class="fa-solid fa-terminal"></i> <span class="btn-text">ترمینال</span></button>
+      <button onclick="openSettings()"><i class="fa-solid fa-gear"></i></button>
+    </div>
+    <span id="status" style="font-size: 11px; color: #888; margin-left: 10px;">Ready</span>
+  </div>
+
+  <!-- کانتینر اصلی کارگاه برنامه (حلال قطعی مشکل فریز دسکتاپ) -->
+  <div id="main-workspace">
+  
+    <!-- لایه تاریک بک‌دراپ موبایل برای بستن سایدبار -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR (لیست فایل‌ها و ورود/خروج فایل) -->
+    <div id="sidebar">
+      <div id="newFile"><i class="fa-solid fa-plus"></i> فایل جدید</div>
+      <div id="files"></div>
+      <div id="sidebar-file-actions">
+        <button onclick="importFile()"><i class="fa-solid fa-file-import"></i> ورود فایل</button>
+        <button onclick="exportFile()"><i class="fa-solid fa-file-export"></i> خروج فایل</button>
+      </div>
+    </div>
+
+    <!-- EDITOR CONTAINER (ادیتور و کیبورد کمکی) -->
+    <div id="editor-container">
+      <div id="editor"></div>
+      
+      <!-- KEYBOARD HELPERS -->
+      <div id="helpers-bar"></div>
+    </div>
+
+    <!-- PANEL (CONSOLE / PREVIEW) -->
+    <div id="panel">
+      <div id="panel-header">
+        <span id="panel-title">کنسول خروجی</span>
+        <div id="panel-actions">
+          <!-- دکمه نمایش تمام‌صفحه پیش‌نمایش وب -->
+          <button id="fullscreen-btn" style="display: none;" onclick="openFullscreenPreview()"><i class="fa-solid fa-expand"></i> <span class="panel-btn-text">تمام‌صفحه</span></button>
+          <!-- دکمه سوییچ زنده بین کنسول و پیش‌نمایش صفحات وب -->
+          <button id="toggle-view-btn" style="display: none;" onclick="toggleConsolePreview()"></button>
+          <button onclick="copyConsole()"><i class="fa-regular fa-copy"></i> <span class="panel-btn-text">کپی خروجی</span></button>
+          <button onclick="clearConsole()"><i class="fa-solid fa-trash-can"></i> <span class="panel-btn-text">پاک کردن</span></button>
+          <button onclick="toggleTerminal()"><i class="fa-solid fa-xmark"></i> <span class="panel-btn-text">بستن</span></button>
+        </div>
+      </div>
+      <div id="console"></div>
+      <!-- فریم پیش‌نمایش گرافیکی کدهای صفحات وب اچ‌تی‌ام‌ال -->
+      <iframe id="html-preview" style="display: none; border: none; width: 100%; flex: 1; background: white;"></iframe>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>تنظیمات کلی برنامه ⚙️</h3>
+      <span class="close-modal" onclick="closeSettings()"><i class="fa-solid fa-xmark"></i></span>
+    </div>
+    <div class="modal-body">
+      
+      <div class="setting-item">
+        <label>تم محیط برنامه (Theme):</label>
+        <button style="width: 100%; justify-content: center;" onclick="toggleTheme()" id="themeBtn">
+          <i class="fa-solid fa-circle-half-stroke"></i> <span id="themeBtnText">تغییر تم</span>
+        </button>
+      </div>
+
+      <div class="setting-item">
+        <label>اندازه فونت (Font Size):</label>
+        <div class="btn-group">
+          <button onclick="fontSizeChange(1)"><i class="fa-solid fa-magnifying-glass-plus"></i> بزرگتر</button>
+          <button onclick="fontSizeChange(-1)"><i class="fa-solid fa-magnifying-glass-minus"></i> کوچکتر</button>
+        </div>
+      </div>
+
+      <!-- تنظیمات اختصاصی پنهان و آشکارسازی نوار علائم -->
+      <div class="setting-item">
+        <label>وضعیت نوار علائم کیبورد لمسی:</label>
+        <button style="width: 100%; justify-content: center;" onclick="toggleHelpersBarSetting()" id="helpersToggleBtn">
+          <i class="fa-solid fa-eye-slash"></i> <span id="helpersToggleBtnText">پنهان کردن نوار علائم</span>
+        </button>
+      </div>
+
+      <!-- تنظیمات اختصاصی علائم کیبورد لمسی -->
+      <div class="setting-item">
+        <label>کلیدهای کمکی کیبورد لمسی (با فاصله جدا کنید):</label>
+        <input type="text" id="helpersListInput" style="direction: ltr; background: var(--bg-newfile); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px; border-radius: 4px; font-family: inherit; font-size: 12px; outline: none;" oninput="saveHelpersList(this.value)" />
+      </div>
+
+      <div class="setting-item">
+        <label>نصب کتابخانه پایتون (Pip Install):</label>
+        <div class="pip-input-group">
+          <input type="text" id="pipPkgInput" placeholder="مثلاً numpy یا requests" />
+          <button onclick="pipInstallFromModal()"><i class="fa-solid fa-box-open"></i> نصب</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- پاپ‌آپ مجزای پیش‌نمایش زنده تمام‌صفحه کدهای وب -->
+<div id="fullscreen-preview-modal">
+  <div id="fullscreen-header">
+    <span><i class="fa-solid fa-eye" style="color: var(--accent-color); margin-left: 6px;"></i> پیش‌نمایش تمام‌صفحه</span>
+    <button onclick="closeFullscreenPreview()"><i class="fa-solid fa-compress"></i> خروج</button>
+  </div>
+  <iframe id="fullscreen-iframe"></iframe>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+
+<script>
+
+let editor;
+let pyodide = null;
+let sidebarOpen = false;
+let terminalVisible = true;
+let currentView = "console"; // "console" یا "preview" برای مدیریت وضعیت نماها
+let showHelpers = true;      // وضعیت پیش‌فرض نمایش نوار علائم
+
+// بازنشانی وضعیت نمایش نوار علائم بر اساس تنظیم ذخیره شده
+try {
+  const storedShow = localStorage.getItem('ide_show_helpers');
+  if (storedShow !== null) {
+    showHelpers = (storedShow === 'true');
+  }
+} catch(e) {}
+
+// لیست پیش‌فرض دکمه‌های نوار علائم کیبورد
+let helperKeys = ['{', '}', '[', ']', '(', ')', ':', ';', '=', "'", '"', '<', '>', '\\n'];
+try {
+  const storedHelpers = localStorage.getItem('ide_helpers_list');
+  if (storedHelpers) {
+    helperKeys = JSON.parse(storedHelpers);
+  }
+} catch(e) {}
+
+let files = {
+  "main.js": "console.log('Hello JS')",
+  "main.py": "print('Hello Python')",
+  "index.html": "<!-- پیش‌نمایش گرافیکی زنده کدهای HTML -->\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { background: #f0f2f5; font-family: sans-serif; text-align: center; padding-top: 50px; }\n    h1 { color: #007acc; }\n  </style>\n</head>\n<body>\n  <h1>سلام دنیا!</h1>\n  <p>صفحه با موفقیت در پیش‌نمایش گرافیکی لود شد.</p>\n\n  <script>\n    console.log('این پیام مستقیماً به کنسول برنامه فرستاده می‌شود!');\n  <\/script>\n</body>\n</html>"
+};
+try {
+  const storedFiles = localStorage.getItem('ide_files');
+  if (storedFiles) files = JSON.parse(storedFiles);
+} catch(e) {}
+
+let currentFile = "main.js";
+try {
+  const storedCurrent = localStorage.getItem('ide_currentFile');
+  if (storedCurrent && files[storedCurrent] !== undefined) {
+    currentFile = storedCurrent;
+  } else {
+    currentFile = Object.keys(files)[0] || "main.js";
+  }
+} catch(e) {}
+
+let currentTheme = localStorage.getItem('ide_theme') || "vs-dark";
+let currentFontSize = parseInt(localStorage.getItem('ide_font_size')) || 14;
+
+/* ===== مبدل فرمت‌ها به شناسه‌های استاندارد مفسر Monaco ===== */
+function getLanguageByExtension(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const map = {
+    'js': 'javascript',
+    'py': 'python',
+    'html': 'html',
+    'htm': 'html',
+    'css': 'css',
+    'json': 'json',
+    'cpp': 'cpp',
+    'c': 'cpp',
+    'h': 'cpp',
+    'cs': 'csharp',
+    'java': 'java',
+    'go': 'go',
+    'rs': 'rust',
+    'sql': 'sql',
+    'sh': 'shell',
+    'bash': 'shell',
+    'md': 'markdown',
+    'xml': 'xml',
+    'php': 'php',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'ts': 'typescript'
+  };
+  return map[ext] || 'plaintext';
+}
+
+/* ===== MONACO ===== */
+require.config({
+  paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" }
+});
+
+require(["vs/editor/editor.main"], function () {
+
+  // ساخت ویرایشگر Monaco با ابعاد محاسبه شده در کانتینر مطلق و زبان تشخیص داده شده بر اساس پسوند
+  editor = monaco.editor.create(document.getElementById("editor"), {
+    value: files[currentFile],
+    language: getLanguageByExtension(currentFile),
+    theme: currentTheme,
+    automaticLayout: true,
+    fontSize: currentFontSize,
+    fontFamily: "'JetBrains Mono', Consolas, monospace",
+    minimap: { enabled: false },
+    autoClosingBrackets: "always",
+    autoClosingQuotes: "always",
+    autoSurround: "languageDefined",
+    wordWrap: "on"
+  });
+
+  editor.onDidChangeModelContent(() => {
+    files[currentFile] = editor.getValue();
+    saveToStorage();
+  });
+
+  applyTheme(currentTheme);
+  applyHelpersSetting(showHelpers); // اعمال اولیه وضعیت نوار علائم
+  renderFiles();
+  renderHelpersBar(); // رندر پویای علائم پایین
+  adjustHeight(); // تنظیم اولیه ابعاد بر اساس ارتفاع مفید نمایشگر
+  document.getElementById("current-filename").innerText = currentFile;
+  updateRunButton(); // به‌روزرسانی نهایی دکمه اجرا/پیش‌نمایش در زمان لود ادیتور
+});
+
+/* ===== PYODIDE ===== */
+async function initPy() {
+  setStatus("Loading Python...", true);
+  pyodide = await loadPyodide();
+  if (pyodide.setStdin) {
+    pyodide.setStdin({
+      stdin: () => prompt("ورودی پایتون (stdin):") || ""
+    });
+  }
+  setStatus("Ready");
+}
+initPy();
+
+/* ===== STORAGE ===== */
+function saveToStorage() {
+  try {
+    localStorage.setItem('ide_files', JSON.stringify(files));
+    localStorage.setItem('ide_currentFile', currentFile);
+  } catch(e) {}
+}
+
+/* ===== DRAWER SIDEBAR TOGGLE ===== */
+function toggleSidebar() {
+  const app = document.getElementById("app");
+  sidebarOpen = !sidebarOpen;
+  if (sidebarOpen) {
+    app.classList.add("sidebar-open");
+  } else {
+    app.classList.remove("sidebar-open");
+  }
+}
+
+/* ===== PANEL CLOSE TOGGLE ===== */
+function toggleTerminal() {
+  const panel = document.getElementById("panel");
+  terminalVisible = !terminalVisible;
+  if (terminalVisible) {
+    panel.classList.remove("terminal-hidden");
+  } else {
+    panel.classList.add("terminal-hidden");
+  }
+  adjustHeight(); // بازسازی مجدد ارتفاع در زمان باز شدن خروجی
+}
+
+/* ===== MODAL SETTINGS ===== */
+function openSettings() {
+  document.getElementById("helpersListInput").value = helperKeys.join(" ");
+  document.getElementById("settingsModal").classList.add("show");
+}
+function closeSettings() {
+  document.getElementById("settingsModal").classList.remove("show");
+}
+window.onclick = function(event) {
+  const modal = document.getElementById("settingsModal");
+  if (event.target == modal) closeSettings();
+}
+
+/* ===== UI & THEME & FONT ===== */
+function setStatus(t, loading = false) {
+  const statusEl = document.getElementById("status");
+  statusEl.innerText = t;
+  if (loading) {
+    statusEl.classList.add("pulsing-status");
+  } else {
+    statusEl.classList.remove("pulsing-status");
+  }
+}
+
+// سیستم ثبت لاگ هوشمند با تفکیک رنگ خطاهای قرمز
+function log(msg) {
+  const consoleEl = document.getElementById("console");
+  const span = document.createElement("span");
+  
+  const lowerMsg = msg.toLowerCase();
+  // اگر خروجی شامل کلمات کلیدی خطا یا پشته تریس‌بک باشد با رنگ قرمز متمایز می‌شود
+  if (lowerMsg.includes("error") || lowerMsg.includes("exception") || lowerMsg.includes("traceback")) {
+    span.style.color = "#ff6b6b"; /* رنگ قرمز ملایم و خوانا */
+    span.style.fontWeight = "bold";
+  }
+  
+  span.textContent = msg + "\n";
+  consoleEl.appendChild(span);
+  
+  // اسکرول خودکار به انتهای لاگ‌ها
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function clearConsole() {
+  document.getElementById("console").innerHTML = ""; // پاک کردن تمام فرزندان هدر کنسول
+}
+
+// کپی دو لایه و فوق‌العاده پایدار به همراه Failsafe
+function copyConsole() {
+  const consoleEl = document.getElementById("console");
+  const text = consoleEl.innerText;
+  if (!text.trim()) {
+    alert("کنسول خالی است.");
+    return;
+  }
+
+  // ۱. تلاش به متد استاندارد Clipboard API در صفحات امن
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      showCopySuccess();
+    }).catch(() => {
+      fallbackCopyText(text); // سوئیچ به روش سنتی در صورت خطا
+    });
+  } else {
+    fallbackCopyText(text); // سوئیچ به روش سنتی در پروتکل‌های محلی یا وب‌ویوهای فاقد مجوز
+  }
+}
+
+// کپی به روش پایدار سنتی با المان موقت تکست‌آریا جهت سازگاری با وب‌ویوهای موبایل
+function fallbackCopyText(text) {
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed"; // جلوگیری از اسکرول غیرمنتظره صفحه
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    
+    textarea.focus();
+    textarea.select();
+    
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    if (successful) {
+      showCopySuccess();
+    } else {
+      promptFallback(text);
+    }
+  } catch (err) {
+    promptFallback(text);
+  }
+}
+
+// نمایش کادر دریافت متن دستی در صورت بسته بودن تمام دسترسی‌ها توسط سیستم‌عامل
+function promptFallback(text) {
+  alert("به دلیل محدودیت شدید امنیتی مرورگر، کپی خودکار لغو شد. لطفاً متن داخل جعبه زیر را کپی کنید:");
+  prompt("متن کپی خروجی:", text);
+}
+
+// نمایش متن بازخورد کپی در بخش وضعیت هدر بار
+function showCopySuccess() {
+  const statusSpan = document.getElementById("status");
+  const oldText = statusSpan.innerText;
+  statusSpan.innerText = "کپی شد! ✓";
+  setTimeout(() => { statusSpan.innerText = oldText; }, 1500);
+}
+
+function applyTheme(theme) {
+  const themeText = document.getElementById("themeBtnText");
+  if (theme === "vs-dark") {
+    document.body.classList.remove("light-theme");
+    if (themeText) themeText.innerText = "تغییر به تم روشن";
+    if (typeof monaco !== 'undefined') monaco.editor.setTheme("vs-dark");
+  } else {
+    document.body.classList.add("light-theme");
+    if (themeText) themeText.innerText = "تغییر به تم تاریک";
+    if (typeof monaco !== 'undefined') monaco.editor.setTheme("vs");
+  }
+  currentTheme = theme;
+  localStorage.setItem('ide_theme', theme);
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === "vs-dark" ? "vs" : "vs-dark");
+}
+
+function fontSizeChange(dir) {
+  currentFontSize += dir;
+  if (currentFontSize < 10) currentFontSize = 10;
+  if (currentFontSize > 28) currentFontSize = 28;
+  localStorage.setItem('ide_font_size', currentFontSize);
+  if (editor) editor.updateOptions({ fontSize: currentFontSize });
+}
+
+/* ===== FILES MANAGEMENT ===== */
+// رندر فایل‌ها به همراه آیکون‌های رنگی و هوشمند برای زبان‌های بیشتر
+function renderFiles() {
+  const box = document.getElementById("files");
+  box.innerHTML = "";
+
+  for (let name in files) {
+    let itemDiv = document.createElement("div");
+    itemDiv.className = "file-item" + (name === currentFile ? " active" : "");
+
+    let nameSpan = document.createElement("span");
+    nameSpan.className = "file-name";
+
+    // بررسی پسوند فایل و اعمال آیکون رنگی و اختصاصی متناسب با زبان‌ها
+    const ext = name.split('.').pop().toLowerCase();
+    let iconHtml = '<i class="fa-regular fa-file-code" style="color: var(--text-muted); margin-right: 8px;"></i>';
+    if (ext === "py") {
+      iconHtml = '<i class="fa-brands fa-python" style="color: #3776ab; margin-right: 8px; font-size: 14px;"></i>';
+    } else if (ext === "js" || ext === "ts") {
+      iconHtml = '<i class="fa-brands fa-square-js" style="color: #f7df1e; margin-right: 8px; font-size: 14px;"></i>';
+    } else if (ext === "html" || ext === "htm") {
+      iconHtml = '<i class="fa-brands fa-html5" style="color: #e34f26; margin-right: 8px; font-size: 14px;"></i>';
+    } else if (ext === "css") {
+      iconHtml = '<i class="fa-brands fa-css3-alt" style="color: #1572b6; margin-right: 8px; font-size: 14px;"></i>';
+    }
+    
+    nameSpan.innerHTML = iconHtml + `<span>${name}</span>`;
+    nameSpan.onclick = () => openFile(name);
+    itemDiv.appendChild(nameSpan);
+
+    let actionsDiv = document.createElement("div");
+    actionsDiv.className = "file-actions";
+
+    let renameBtn = document.createElement("span");
+    renameBtn.className = "action-btn";
+    renameBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+    renameBtn.title = "تغییر نام";
+    renameBtn.onclick = (e) => { e.stopPropagation(); renameFile(name); };
+
+    let deleteBtn = document.createElement("span");
+    deleteBtn.className = "action-btn";
+    deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    deleteBtn.title = "حذف فایل";
+    deleteBtn.onclick = (e) => { e.stopPropagation(); deleteFile(name); };
+
+    actionsDiv.appendChild(renameBtn);
+    actionsDiv.appendChild(deleteBtn);
+    itemDiv.appendChild(actionsDiv);
+
+    box.appendChild(itemDiv);
+  }
+}
+
+function openFile(name) {
+  currentFile = name;
+  
+  // تنظیم پویای زبان هایلایت ادیتور بر اساس پسوند واقعی فایل
+  let lang = getLanguageByExtension(name);
+
+  monaco.editor.setModelLanguage(editor.getModel(), lang);
+  editor.setValue(files[name]);
+  saveToStorage();
+
+  document.getElementById("app").classList.remove("sidebar-open");
+  sidebarOpen = false;
+
+  document.getElementById("current-filename").innerText = name;
+  
+  // ریست کردن وضعیت کنسول در زمان تعویض فایل به فرمت غیر HTML
+  showConsoleFrame();
+  
+  // به‌روزرسانی پویای متن دکمه هدر (اجرا یا پیش‌نمایش)
+  updateRunButton();
+
+  renderFiles();
+}
+
+function createNewFile() {
+  let name = prompt("نام فایل همراه با پسوند را وارد کنید (مثلاً index.html، program.cpp یا script.py):");
+  if (!name) return;
+  files[name] = "";
+  saveToStorage();
+  renderFiles();
+  openFile(name);
+}
+
+function renameFile(oldName) {
+  let newName = prompt("نام جدید فایل را وارد کنید:", oldName);
+  if (!newName || newName === oldName) return;
+  if (files[newName] !== undefined) {
+    alert("فایلی با این نام از قبل وجود دارد.");
+    return;
+  }
+  files[newName] = files[oldName];
+  delete files[oldName];
+  if (currentFile === oldName) {
+    currentFile = newName;
+    document.getElementById("current-filename").innerText = newName;
+  }
+  saveToStorage();
+  renderFiles();
+  openFile(currentFile);
+}
+
+function deleteFile(name) {
+  const keys = Object.keys(files);
+  if (keys.length <= 1) {
+    alert("امکان حذف تنها فایل باقی‌مانده وجود ندارد.");
+    return;
+  }
+  if (!confirm(`آیا از حذف فایل ${name} مطمئن هستید؟`)) return;
+  delete files[name];
+  if (currentFile === name) {
+    currentFile = Object.keys(files)[0];
+    document.getElementById("current-filename").innerText = currentFile;
+  }
+  saveToStorage();
+  renderFiles();
+  openFile(currentFile);
+}
+
+/* ===== EXPORT / IMPORT ===== */
+function exportFile() {
+  document.getElementById("app").classList.remove("sidebar-open");
+  sidebarOpen = false;
+
+  const blob = new Blob([editor.getValue()], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = currentFile;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importFile() {
+  document.getElementById("app").classList.remove("sidebar-open");
+  sidebarOpen = false;
+
+  const input = document.createElement("input");
+  input.type = "file";
+  // حذف فیلتر accept جهت رفع محدودیت عدم انتخاب سایر فرمت‌های متنی
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const name = file.name;
+      files[name] = evt.target.result;
+      saveToStorage();
+      renderFiles();
+      openFile(name);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/* ===== UNDO & REDO & SYMBOLS ===== */
+function triggerUndo() {
+  if (editor) {
+    editor.trigger('keyboard', 'undo', null);
+    editor.focus();
+  }
+}
+
+function triggerRedo() {
+  if (editor) {
+    editor.trigger('keyboard', 'redo', null);
+    editor.focus();
+  }
+}
+
+/* ===== سوییچ فریم‌های کنسول متنی و پیش‌نمایش گرافیکی وب ===== */
+function toggleConsolePreview() {
+  if (currentView === "console") {
+    showPreviewFrame();
+  } else {
+    showConsoleFrame();
+  }
+}
+
+function showPreviewFrame() {
+  document.getElementById("console").style.display = "none";
+  document.getElementById("html-preview").style.display = "block";
+  document.getElementById("panel-title").innerText = "پیش‌نمایش زنده";
+
+  const btn = document.getElementById("toggle-view-btn");
+  btn.innerHTML = '<i class="fa-solid fa-terminal"></i> <span class="panel-btn-text">کنسول</span>';
+  btn.style.display = "inline-flex";
+  
+  // فعال کردن دکمه نمایش تمام صفحه مخصوص کدهای وب
+  document.getElementById("fullscreen-btn").style.display = "inline-flex";
+  
+  currentView = "preview";
+}
+
+function showConsoleFrame() {
+  document.getElementById("html-preview").style.display = "none";
+  document.getElementById("console").style.display = "block";
+  document.getElementById("panel-title").innerText = "کنسول خروجی";
+
+  const btn = document.getElementById("toggle-view-btn");
+  // دکمه سوییچ زنده فقط برای فرمت‌های HTML فعال باشد
+  if (currentFile.endsWith(".html") || currentFile.endsWith(".htm")) {
+    btn.innerHTML = '<i class="fa-solid fa-eye"></i> <span class="panel-btn-text">پیش‌نمایش</span>';
+    btn.style.display = "inline-flex";
+  } else {
+    btn.style.display = "none";
+  }
+  
+  // غیرفعال کردن دکمه پیش‌نمایش تمام صفحه
+  document.getElementById("fullscreen-btn").style.display = "none";
+  
+  currentView = "console";
+}
+
+// باز کردن پیش‌نمایش HTML به صورت تمام‌صفحه به همراه تزریق کنسول
+function openFullscreenPreview() {
+  const code = editor.getValue();
+  const modal = document.getElementById("fullscreen-preview-modal");
+  const iframe = document.getElementById("fullscreen-iframe");
+  
+  modal.style.display = "flex";
+  
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+  
+  // اسکریپت تزریقی هوشمند جهت گرفتن خطاهای احتمالی در زمان پیش‌نمایش تمام‌صفحه
+  const injectConsoleScript = `
+    <script>
+      const parentLog = window.parent.log;
+      window.console.log = (...args) => parentLog(args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+      window.console.error = (...args) => parentLog("ERROR: " + args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+      window.console.warn = (...args) => parentLog("WARN: " + args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+    <\/script>
+  `;
+  
+  iframeDoc.open();
+  iframeDoc.write(injectConsoleScript + code);
+  iframeDoc.close();
+}
+
+// خروج از حالت تمام‌صفحه پیش‌نمایش وب
+function closeFullscreenPreview() {
+  const modal = document.getElementById("fullscreen-preview-modal");
+  modal.style.display = "none";
+  
+  // پاک کردن محتوای صفحه تمام‌صفحه متوقف کردن پردازش‌ها
+  const iframe = document.getElementById("fullscreen-iframe");
+  iframe.src = "about:blank";
+}
+
+// به‌روزرسانی پویای متن دکمه اجرا بر اساس فرمت فایل جاری
+function updateRunButton() {
+  const runBtn = document.querySelector(".run-btn");
+  if (!runBtn) return;
+  const ext = currentFile.split('.').pop().toLowerCase();
+  
+  if (ext === "html" || ext === "htm") {
+    runBtn.innerHTML = '<i class="fa-solid fa-eye"></i> <span class="btn-text">پیش‌نمایش</span>';
+  } else {
+    runBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span class="btn-text">اجرا</span>';
+  }
+}
+
+// اعمال هوشمند تنظیم وضعیت نوار علائم بر اساس متغیر کلاس CSS
+function applyHelpersSetting(visible) {
+  const app = document.getElementById("app");
+  const btnText = document.getElementById("helpersToggleBtnText");
+  const btnIcon = document.querySelector("#helpersToggleBtn i");
+
+  if (visible) {
+    app.classList.remove("helpers-hidden");
+    if (btnText) btnText.innerText = "پنهان کردن نوار علائم";
+    if (btnIcon) btnIcon.className = "fa-solid fa-eye-slash";
+  } else {
+    app.classList.add("helpers-hidden");
+    if (btnText) btnText.innerText = "نمایش نوار علائم";
+    if (btnIcon) btnIcon.className = "fa-solid fa-eye";
+  }
+  
+  showHelpers = visible;
+  localStorage.setItem('ide_show_helpers', visible);
+
+  // همگام‌سازی آنی ابعاد ادیتور پس از تغییر قد به علت پنهان شدن نوار علائم
+  if (editor) {
+    setTimeout(() => editor.layout(), 100);
+  }
+}
+
+// تابع فعال‌سازی سوییچ پویای نوار علائم از روی دکمه تنظیمات
+function toggleHelpersBarSetting() {
+  applyHelpersSetting(!showHelpers);
+}
+
+function insertSymbol(sym) {
+  if (!editor) return;
+  const selection = editor.getSelection();
+  const range = new monaco.Range(
+    selection.startLineNumber, selection.startColumn,
+    selection.endLineNumber, selection.endColumn
+  );
+  const text = sym === '\\n' ? '\n' : sym;
+  const op = { identifier: { major: 1, minor: 1 }, range: range, text: text, forceMoveMarkers: true };
+  editor.executeEdits("keyboard-helper", [op]);
+  editor.focus();
+}
+
+// رندر پویای دکمه‌های علائم کمکی به همراه دکمه‌های لغو و انجام مجدد در ابتدای نوار
+function renderHelpersBar() {
+  const bar = document.getElementById("helpers-bar");
+  bar.innerHTML = "";
+
+  // ۱. افزودن دکمه لغو (Undo) در ابتدای نوار کمکی
+  let undoSpan = document.createElement("span");
+  undoSpan.className = "helper-action-btn";
+  undoSpan.innerHTML = '<i class="fa-solid fa-arrow-rotate-left"></i>';
+  undoSpan.title = "Undo";
+  undoSpan.onclick = triggerUndo;
+  bar.appendChild(undoSpan);
+
+  // ۲. افزودن دکمه انجام مجدد (Redo) بعد از لغو
+  let redoSpan = document.createElement("span");
+  redoSpan.className = "helper-action-btn";
+  redoSpan.innerHTML = '<i class="fa-solid fa-arrow-rotate-right"></i>';
+  redoSpan.title = "Redo";
+  redoSpan.onclick = triggerRedo;
+  bar.appendChild(redoSpan);
+
+  // ۳. افزودن علائم ثبت شده توسط کاربر به ادامه‌ی نوار
+  helperKeys.forEach(sym => {
+    let span = document.createElement("span");
+    span.innerText = sym === '\\n' ? '\\n' : sym;
+    span.onclick = () => insertSymbol(sym);
+    bar.appendChild(span);
+  });
+}
+
+// ذخیره پویای علائم کیبورد حین تایپ کاربر در کادر تنظیمات
+function saveHelpersList(val) {
+  const keys = val.split(/\s+/).filter(k => k.length > 0);
+  if (keys.length > 0) {
+    helperKeys = keys;
+    try {
+      localStorage.setItem('ide_helpers_list', JSON.stringify(helperKeys));
+    } catch(e) {}
+    renderHelpersBar();
+  }
+}
+
+/* ===== PIP INSTALL ===== */
+async function pipInstallFromModal() {
+  const input = document.getElementById("pipPkgInput");
+  const pkg = input.value.trim();
+  if (!pkg) return;
+  if (!pyodide) { alert("لطفاً تا بارگذاری کامل پایتون منتظر بمانید."); return; }
+
+  closeSettings();
+  
+  if (!terminalVisible) {
+    toggleTerminal();
+  }
+
+  setStatus("Installing package...", true);
+  log(`\nInstalling Python package: ${pkg}...`);
+  try {
+    await pyodide.loadPackage("micropip");
+    await pyodide.runPythonAsync(`import micropip; await micropip.install('${pkg}')`);
+    log(`Successfully installed package: ${pkg}`);
+    setStatus("Ready");
+  } catch (e) {
+    log(`ERROR: Installation failed: ${e}`);
+    setStatus("Ready");
+  }
+  input.value = "";
+}
+
+/* ===== تکنولوژی هماهنگ‌سازی پویای کل برنامه با کیبورد گوشی (Visual Viewport API) ===== */
+function adjustHeight() {
+  const app = document.getElementById("app");
+  if (app && window.visualViewport) {
+    app.style.height = `${window.visualViewport.height}px`;
+  }
+  if (editor) {
+    editor.layout();
+  }
+}
+
+// اتصال رویدادهای زنده فریم دید به تابع همگام‌ساز
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', adjustHeight);
+  window.visualViewport.addEventListener('scroll', adjustHeight);
+} else {
+  window.addEventListener('resize', () => {
+    if (editor) editor.layout();
+  });
+}
+
+document.getElementById("newFile").onclick = createNewFile;
+
+/* ===== RUN ENGINE (محدود به پایتون و جاوا اسکریپت) ===== */
+async function run() {
+  const code = editor.getValue();
+  
+  // استخراج پسوند فایل جاری جهت بررسی امکان اجرا
+  const ext = currentFile.split('.').pop().toLowerCase();
+
+  if (!terminalVisible) {
+    toggleTerminal();
+  }
+
+  log("\n--- RUN ---");
+
+  try {
+    // ۱. اجرای جاوا اسکریپت با پسوند .js
+    if (ext === "js") {
+      showConsoleFrame(); // ریست نما به کنسول
+      let outputCaptured = false;
+      const formatArg = arg => {
+        if (arg === null) return "null";
+        if (arg === undefined) return "undefined";
+        if (typeof arg === 'object') {
+          try { return JSON.stringify(arg); } catch (e) { return String(arg); }
+        }
+        return String(arg);
+      };
+
+      const customConsole = {
+        log: (...args) => { log(args.map(formatArg).join(' ')); outputCaptured = true; },
+        error: (...args) => { log("ERROR: " + args.map(formatArg).join(' ')); outputCaptured = true; },
+        warn: (...args) => { log("WARN: " + args.map(formatArg).join(' ')); outputCaptured = true; },
+        info: (...args) => { log("INFO: " + args.map(formatArg).join(' ')); outputCaptured = true; }
+      };
+
+      const result = new Function('console', code)(customConsole);
+      if (result !== undefined) log(result);
+      else if (!outputCaptured) log("done");
+    }
+    // ۲. اجرای پایتون با پسوند .py
+    else if (ext === "py") {
+      showConsoleFrame(); // ریست نما به کنسول
+      if (!pyodide) { log("Python not ready..."); return; }
+      pyodide.setStdout({ batched: t => log(t) });
+      pyodide.setStderr({ batched: t => log("ERROR: " + t) });
+      const result = await pyodide.runPythonAsync(code);
+      if (result !== undefined) log(result);
+    }
+    // ۳. اجرای گرافیکی صفحات وب با پسوند .html یا .htm
+    else if (ext === "html" || ext === "htm") {
+      showPreviewFrame(); // سوییچ زنده به پنل پیش‌نمایش گرافیکی وب
+      
+      const iframe = document.getElementById("html-preview");
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      
+      // اسکریپت تزریقی هوشمند جهت هدایت لاگ‌های کنسول وب‌سایت به کنسول متنی برنامه
+      // رفع باگ تگ پایانی اسکریپت با اسلش گریز جهت پیشگیری از فریز شدن کل برنامه
+      const injectConsoleScript = `
+        <script>
+          const parentLog = window.parent.log;
+          window.console.log = (...args) => parentLog(args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+          window.console.error = (...args) => parentLog("ERROR: " + args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+          window.console.warn = (...args) => parentLog("WARN: " + args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+        <\/script>
+      `;
+      
+      iframeDoc.open();
+      iframeDoc.write(injectConsoleScript + code);
+      iframeDoc.close();
+    }
+    // ۴. سایر فرمت‌ها (فقط نوشتن مجاز است، پیامی صادر می‌شود)
+    else {
+      showConsoleFrame();
+      log(`ERROR: اجرای فرمت‌های .${ext} در مرورگر پشتیبانی نمی‌شود.\nاین برنامه فقط کدهای جاوااسکریپت (.js)، پایتون (.py) و صفحات وب (.html) را اجرا می‌کند.`);
+    }
+  } catch (e) {
+    log("ERROR: " + e);
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "Enter") run();
+});
+
+</script>
+
+</body>
+</html>
