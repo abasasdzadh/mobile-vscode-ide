@@ -6,7 +6,7 @@ This project provides a complete coding environment directly inside the browser,
 
 ---
 
-✨ Features
+# ✨ Features
 
 - 📝 Monaco Editor (VS Code Editor)
 - 🐍 Python execution using Pyodide
@@ -25,7 +25,7 @@ This project provides a complete coding environment directly inside the browser,
 
 ---
 
-🛠️ Built With
+# 🛠️ Built With
 
 - HTML5
 - CSS3
@@ -36,7 +36,7 @@ This project provides a complete coding environment directly inside the browser,
 
 ---
 
-📸 Screenshots
+# 📸 Screenshots
 
 Create a folder named screenshots and add images like:
 
@@ -52,7 +52,7 @@ Example:
 
 ---
 
-🚀 Getting Started
+# 🚀 Getting Started
 
 Clone the repository
 
@@ -68,13 +68,13 @@ No installation is required.
 
 ---
 
-🎯 Project Goals
+# 🎯 Project Goals
 
 This project aims to provide a lightweight browser-based IDE that works smoothly on smartphones and tablets while keeping a modern desktop-like experience.
 
 ---
 
-🤝 Contributing
+# 🤝 Contributing
 
 Contributions, ideas, and pull requests are welcome.
 
@@ -82,12 +82,12 @@ Feel free to fork the project and improve it.
 
 ---
 
-⭐ Support
+# ⭐ Support
 
 If you like this project, please give it a ⭐ on GitHub.
 
 ---
 
-📄 License
+# 📄 License
 
 This project is licensed under the MIT License.
