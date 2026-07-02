@@ -1,3 +1,5 @@
+--- START OF FILE index.html ---
+
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -5,6 +7,14 @@
 <!-- تفهیم به مرورگر جهت فشرده‌سازی خودکار ارتفاع مفید زمان باز شدن کیبورد -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <title>Mobile VS Code IDE</title>
+
+<!-- تنظیمات و تگ‌های ارتباطی PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e1e1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mobile IDE">
+<link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vscode/vscode-original.svg">
 
 <!-- وارد کردن فونت‌های استاندارد فارسی و انگلیسی کدهای برنامه‌نویسی -->
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -1216,6 +1226,7 @@ function triggerUndo() {
   }
 }
 
+// انجام دوباره عملیات به مفسر Monaco
 function triggerRedo() {
   if (editor) {
     editor.trigger('keyboard', 'redo', null);
@@ -1533,7 +1544,16 @@ document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.key === "Enter") run();
 });
 
+// ثبت Service Worker برای قابلیت‌های آفلاین و PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => console.log('Service Worker registered with scope:', reg.scope))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  });
+}
+
 </script>
 
 </body>
-</html>
+  </html>
